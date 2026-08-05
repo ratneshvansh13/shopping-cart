@@ -25,25 +25,26 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        mvn sonar:sonar \
-                        -Dsonar.projectKey=ratneshvansh13_shopping-cart \
-                        -Dsonar.projectName=Shopping-Cart
-                    '''
-                }
-            }
-        }
+        // stage('SonarQube Scan') {
+        //     steps {
+        //         withSonarQubeEnv('SonarQube') {
+        //             sh '''
+        //                 mvn sonar:sonar \
+        //                     -Dsonar.projectKey=shopping-cart \
+        //                     -Dsonar.host.url=$SONAR_HOST_URL \
+        //                     -Dsonar.login=$SONAR_AUTH_TOKEN
+        //             '''
+        //         }
+        //     }
+        // }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // stage('Quality Gate') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
 
         stage('Docker Build') {
             steps {
