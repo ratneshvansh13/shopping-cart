@@ -14,7 +14,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'devops', 'devops-test',
+                git branch: 'devops-test',
                     url: 'https://github.com/ratneshvansh13/shopping-cart.git'
             }
         }
