@@ -85,7 +85,7 @@ pipeline {
                         sh '''
                             echo "Deploying to $DEPLOYMENT_SERVER"
 
-                            ssh -o StrictHostKeyChecking=no ec2-user@$DEPLOYMENT_SERVER << EOF
+                            ssh -o StrictHostKeyChecking=no ec2-user@$DEPLOYMENT_SERVER <<
 
                             docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
 
@@ -100,7 +100,6 @@ pipeline {
 
                             docker image prune -f
 
-                            EOF
                         '''
                     }
                 }
