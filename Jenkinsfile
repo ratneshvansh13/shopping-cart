@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "ratneshvansh13/shopping-cart"
-        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKER_TAG   = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -30,9 +30,9 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         mvn sonar:sonar \
-                            -Dsonar.projectKey=shopping-cart \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN
+                          -Dsonar.projectKey=shopping-cart \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
                 }
             }
@@ -55,16 +55,54 @@ pipeline {
 
         stage('Docker Login & Push') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
                         docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
                         docker push ${DOCKER_IMAGE}:latest
                     '''
+                }
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'deployment-server',
+                        variable: 'DEPLOYMENT_SERVER'
+                    )
+                ]) {
+                    sshagent(credentials: ['ec2-ssh-key']) {
+
+                        sh '''
+                            echo "Deploying to $DEPLOYMENT_SERVER"
+
+                            ssh -o StrictHostKeyChecking=no ec2-user@$DEPLOYMENT_SERVER << EOF
+
+                            docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+                            docker stop shopping-cart || true
+                            docker rm shopping-cart || true
+
+                            docker run -d \
+                                --name shopping-cart \
+                                --restart unless-stopped \
+                                -p 8080:8080 \
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+                            docker image prune -f
+
+                            EOF
+                        '''
+                    }
                 }
             }
         }
@@ -72,11 +110,13 @@ pipeline {
 
     post {
         success {
-            echo "Build Successful"
+            echo 'Build Successful'
         }
+
         failure {
-            echo "Build Failed"
+            echo 'Build Failed'
         }
+
         always {
             sh 'docker logout || true'
         }
