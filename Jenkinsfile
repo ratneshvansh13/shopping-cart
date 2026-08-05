@@ -21,7 +21,27 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean verify -DskipTests'
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=ratneshvansh13_shopping-cart \
+                        -Dsonar.projectName=Shopping-Cart
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
