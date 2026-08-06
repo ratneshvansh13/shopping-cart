@@ -81,8 +81,8 @@ pipeline {
                         sh """
                             echo "Deploying to \$DEPLOYMENT_SERVER"
 
-                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER <<'EOF'
-                            docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER "
+                            docker pull ${DOCKER_IMAGE}:latest
 
                             docker stop shopping-cart || true
                             docker rm shopping-cart || true
@@ -91,10 +91,10 @@ pipeline {
                                 --name shopping-cart \
                                 --restart unless-stopped \
                                 -p 8080:8080 \
-                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                                ${DOCKER_IMAGE}:latest
 
                             docker image prune -f
-                            EOF
+                            "
                             """
                     }
                 }
