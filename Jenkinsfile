@@ -78,10 +78,10 @@ pipeline {
                     string(credentialsId: 'deployment-server', variable: 'DEPLOYMENT_SERVER')
                 ]) {
                     sshagent(credentials: ['ec2-ssh-key']) {
-                        sh '''
+                        sh """
                             echo "Deploying to \$DEPLOYMENT_SERVER"
 
-                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER '
+                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER <<'EOF'
                             docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
 
                             docker stop shopping-cart || true
@@ -94,8 +94,8 @@ pipeline {
                                 ${DOCKER_IMAGE}:${DOCKER_TAG}
 
                             docker image prune -f
-                            '
-                        '''
+                            EOF
+                            """
                     }
                 }
             }
