@@ -8,6 +8,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "ratneshvansh13/shopping-cart"
         DOCKER_TAG   = "${BUILD_NUMBER}"
+        DEPLOYMENT_SERVER = "172.31.39.245"
     }
 
     stages {
