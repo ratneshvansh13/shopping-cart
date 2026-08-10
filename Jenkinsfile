@@ -39,7 +39,7 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -80,7 +80,7 @@ pipeline {
                         echo "Deploying to $DEPLOYMENT_SERVER"
 
                         ssh -o StrictHostKeyChecking=no \
-                            ec2-user@$DEPLOYMENT_SERVER << 'EOF'
+                            root@$DEPLOYMENT_SERVER << 'EOF'
 
                         docker pull ratneshvansh13/shopping-cart:latest
 
