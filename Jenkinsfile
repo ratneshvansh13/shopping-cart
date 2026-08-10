@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "ratneshvansh13/shopping-cart"
-        DOCKER_TAG   = "${BUILD_NUMBER}"
+        DOCKER_TAG = "${BUILD_NUMBER}"
         DEPLOYMENT_SERVER = "172.31.39.245"
     }
 
@@ -31,9 +31,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         mvn sonar:sonar \
-                          -Dsonar.projectKey=shopping-cart \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                          -Dsonar.projectKey=shopping-cart
                     '''
                 }
             }
@@ -64,7 +62,9 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
 
                         docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
                         docker push ${DOCKER_IMAGE}:latest
@@ -74,32 +74,33 @@ pipeline {
         }
 
         stage('Deploy to EC2') {
-    steps {
-        sshagent(['ec2-ssh-key']) {
-            sh '''
-                echo "Deploying to $DEPLOYMENT_SERVER"
+            steps {
+                sshagent(['ec2-ssh-key']) {
+                    sh '''
+                        echo "Deploying to $DEPLOYMENT_SERVER"
 
-                ssh -o StrictHostKeyChecking=no \
-                    ec2-user@$DEPLOYMENT_SERVER << 'EOF'
+                        ssh -o StrictHostKeyChecking=no \
+                            ec2-user@$DEPLOYMENT_SERVER << 'EOF'
 
-                docker pull ratneshvansh13/shopping-cart:latest
+                        docker pull ratneshvansh13/shopping-cart:latest
 
-                docker stop shopping-cart || true
-                docker rm shopping-cart || true
+                        docker stop shopping-cart || true
+                        docker rm shopping-cart || true
 
-                docker run -d \
-                    --name shopping-cart \
-                    --restart unless-stopped \
-                    -p 8080:8080 \
-                    ratneshvansh13/shopping-cart:latest
+                        docker run -d \
+                            --name shopping-cart \
+                            --restart unless-stopped \
+                            -p 8080:8080 \
+                            ratneshvansh13/shopping-cart:latest
 
-                docker image prune -f
+                        docker image prune -f
 
-                EOF
-            '''
+                        EOF
+                    '''
+                }
+            }
         }
     }
-}
 
     post {
         success {
