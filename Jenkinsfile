@@ -74,34 +74,32 @@ pipeline {
         }
 
         stage('Deploy to EC2') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'deployment-server', variable: 'DEPLOYMENT_SERVER')
-                ]) {
-                    sshagent(credentials: ['ec2-ssh-key']) {
-                        sh """
-                            echo "Deploying to \$DEPLOYMENT_SERVER"
+    steps {
+        sshagent(['ec2-ssh-key']) {
+            sh '''
+                echo "Deploying to $DEPLOYMENT_SERVER"
 
-                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER "
-                            docker pull ${DOCKER_IMAGE}:latest
+                ssh -o StrictHostKeyChecking=no \
+                    ec2-user@$DEPLOYMENT_SERVER << 'EOF'
 
-                            docker stop shopping-cart || true
-                            docker rm shopping-cart || true
+                docker pull ratneshvansh13/shopping-cart:latest
 
-                            docker run -d \
-                                --name shopping-cart \
-                                --restart unless-stopped \
-                                -p 8080:8080 \
-                                ${DOCKER_IMAGE}:latest
+                docker stop shopping-cart || true
+                docker rm shopping-cart || true
 
-                            docker image prune -f
-                            "
-                            """
-                    }
-                }
-            }
+                docker run -d \
+                    --name shopping-cart \
+                    --restart unless-stopped \
+                    -p 8080:8080 \
+                    ratneshvansh13/shopping-cart:latest
+
+                docker image prune -f
+
+                EOF
+            '''
         }
     }
+}
 
     post {
         success {
