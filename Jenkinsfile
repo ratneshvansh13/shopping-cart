@@ -80,7 +80,7 @@ pipeline {
                         echo "Deploying to $DEPLOYMENT_SERVER"
 
                         ssh -o StrictHostKeyChecking=no \
-                            root@$DEPLOYMENT_SERVER << 'EOF'
+                            ec2-user@$DEPLOYMENT_SERVER << 'EOF'
 
                         docker pull ratneshvansh13/shopping-cart:latest
 
@@ -96,9 +96,8 @@ pipeline {
                         docker image prune -f
 
                         EOF
-                    '''
-                }
-            }
+                     '''
+             }
         }
     }
 
