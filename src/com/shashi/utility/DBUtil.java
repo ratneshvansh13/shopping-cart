@@ -31,22 +31,24 @@ public class DBUtil {
 
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+        	e.printStackTrace();
+        	throw new RuntimeException("DB connection failed", e); // fail loudly instead of silently
+    	}
 		return conn;
 	}
 
-	public static void closeConnection(Connection con) {
-		/*
-		 * try { if (con != null && !con.isClosed()) {
-		 * 
-		 * con.close(); } } catch (SQLException e) { // TODO Auto-generated catch block
-		 * e.printStackTrace(); }
-		 */
+	private static String resolveEnv(String value) {
+    	if (value != null && value.startsWith("${") && value.endsWith("}")) {
+        	String envVar = value.substring(2, value.length() - 1);
+        	String resolved = System.getenv(envVar);
+        	if (resolved == null) {
+          	  throw new RuntimeException("Missing required environment variable: " + envVar);
+        }
+        return resolved;
+    }
+    return value;
 	}
-
+	
 	public static void closeConnection(ResultSet rs) {
 		try {
 			if (rs != null && !rs.isClosed()) {
