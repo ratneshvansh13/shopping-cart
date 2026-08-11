@@ -79,21 +79,21 @@ pipeline {
                         credentialsId: 'deployment-server',
                         variable: 'DEPLOYMENT_SERVER'
                     )
-                ]){
+                ]) {
                     sshagent(credentials: ['ec2-ssh-key']) {
 
                         sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER '
-                        
-                            cd /home/ec2-user/shopping-cart
+                            ssh -o StrictHostKeyChecking=no ec2-user@\\$DEPLOYMENT_SERVER '
+                                cd /home/ec2-user/shopping-cart
 
-                            docker compose pull
+                                docker compose pull
 
-                            docker compose up -d
+                                docker compose up -d
 
-                            docker image prune -f
-                        '
-                    """
+                                docker image prune -f
+                            '
+                        """
+                    }
                 }
             }
         }
