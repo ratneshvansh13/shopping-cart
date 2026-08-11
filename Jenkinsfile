@@ -73,32 +73,41 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy') {
             steps {
-                sshagent(['ec2-ssh-key']) {
+                withCredentials([
+                    file(
+                    credentialsId: 'shopping-cart-properties',
+                    variable: 'APP_PROPERTIES'
+            )
+        ]) {
                     sh '''
-                        echo "Deploying to $DEPLOYMENT_SERVER"
+                        scp "$APP_PROPERTIES" ec2-user@$DEPLOYMENT_SERVER:/tmp/application.properties
 
-                        ssh -o StrictHostKeyChecking=no \
-                            ec2-user@$DEPLOYMENT_SERVER << 'EOF'
+                        ssh ec2-user@$DEPLOYMENT_SERVER "
+                        sudo mkdir -p /opt/shopping-cart &&
+                        sudo mv /tmp/application.properties /opt/shopping-cart/application.properties &&
+                        sudo chmod 600 /opt/shopping-cart/application.properties
+                "
+            '''
+        }
 
-                        docker pull ratneshvansh13/shopping-cart:latest
-
-                        docker stop shopping-cart || true
-                        docker rm shopping-cart || true
-
+                sshagent(credentials: ['ec2-ssh-key']) {
+                    sh '''
+                        ssh ec2-user@$DEPLOYMENT_SERVER "
+                        docker pull ratneshvansh13/shopping-cart:latest &&
+                        docker stop shopping-cart || true &&
+                        docker rm shopping-cart || true &&
                         docker run -d \
                             --name shopping-cart \
-                            --restart unless-stopped \
                             -p 8080:8080 \
+                            -v /opt/shopping-cart/application.properties:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.properties:ro \
                             ratneshvansh13/shopping-cart:latest
-
-                        docker image prune -f
-
-                        EOF
-                     '''
-             }
+                    "
+                '''
         }
+    }
+}
     }
 
     post {
