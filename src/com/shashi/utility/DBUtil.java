@@ -17,11 +17,10 @@ public class DBUtil {
 
 		try {
 			if (conn == null || conn.isClosed()) {
-				ResourceBundle rb = ResourceBundle.getBundle("application");
-				String connectionString = rb.getString("db.connectionString");
-				String driverName = rb.getString("db.driverName");
-				String username = rb.getString("db.username");
-				String password = rb.getString("db.password");
+				String connectionString = System.getenv("DB_CONNECTION_STRING");
+				String driverName = System.getenv("DB_DRIVER");
+				String username = System.getenv("DB_USERNAME");
+				String password = System.getenv("DB_PASSWORD");
 				try {
 					Class.forName(driverName);
 				} catch (ClassNotFoundException e) {
