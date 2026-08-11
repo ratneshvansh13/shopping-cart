@@ -75,28 +75,25 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'deployment-server', variable: 'DEPLOYMENT_SERVER')
-                ]) {
+                    string(
+                        credentialsId: 'deployment-server',
+                        variable: 'DEPLOYMENT_SERVER'
+                    )
+                ]){
                     sshagent(credentials: ['ec2-ssh-key']) {
+
                         sh """
-                            echo "Deploying to \$DEPLOYMENT_SERVER"
+                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER '
+                        
+                            cd /home/ec2-user/shopping-cart
 
-                            ssh -o StrictHostKeyChecking=no ec2-user@\$DEPLOYMENT_SERVER "
-                            docker pull ${DOCKER_IMAGE}:latest
+                            docker compose pull
 
-                            docker stop shopping-cart || true
-                            docker rm shopping-cart || true
-
-                            docker run -d \
-                                --name shopping-cart \
-                                --restart unless-stopped \
-                                -p 8080:8080 \
-                                ${DOCKER_IMAGE}:latest
+                            docker compose up -d
 
                             docker image prune -f
-                            "
-                            """
-                    }
+                        '
+                    """
                 }
             }
         }

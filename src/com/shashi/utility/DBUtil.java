@@ -15,27 +15,44 @@ public class DBUtil {
 
 	public static Connection provideConnection() {
 
-		try {
-			if (conn == null || conn.isClosed()) {
-				String connectionString = System.getenv("DB_CONNECTION_STRING");
-				String driverName = System.getenv("DB_DRIVER");
-				String username = System.getenv("DB_USERNAME");
-				String password = System.getenv("DB_PASSWORD");
-				try {
-					Class.forName(driverName);
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				}
-				conn = DriverManager.getConnection(connectionString, username, password);
+    try {
+        if (conn == null || conn.isClosed()) {
 
-			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            String connectionString = System.getenv("DB_CONNECTION_STRING");
+            String driverName = System.getenv("DB_DRIVER");
+            String username = System.getenv("DB_USERNAME");
+            String password = System.getenv("DB_PASSWORD");
 
-		return conn;
-	}
+            if (connectionString == null ||
+                driverName == null ||
+                username == null ||
+                password == null) {
+
+                throw new SQLException(
+                    "Database environment variables are not configured"
+                );
+            }
+
+            Class.forName(driverName);
+
+            conn = DriverManager.getConnection(
+                connectionString,
+                username,
+                password
+            );
+        }
+
+    } catch (ClassNotFoundException e) {
+        System.err.println("JDBC driver not found");
+        e.printStackTrace();
+
+    } catch (SQLException e) {
+        System.err.println("Database connection failed");
+        e.printStackTrace();
+    }
+
+    return conn;
+}
 
 	public static void closeConnection(Connection con) {
 		/*
