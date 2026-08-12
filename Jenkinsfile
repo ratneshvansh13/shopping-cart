@@ -99,53 +99,56 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-
                 withCredentials([
-                    string(
-                        credentialsId: 'deployment-server',
-                        variable: 'DEPLOYMENT_SERVER'
-                    )
-                ]) {
+                string(
+                credentialsId: 'deployment-server',
+                variable: 'DEPLOYMENT_SERVER'
+            )
+        ]) {
 
-                    sshagent(credentials: ['ec2-ssh-key']) {
+            sshagent(credentials: ['ec2-ssh-key']) {
 
-                        sh '''
-                            set -e
+                sh '''
+                    set -e
 
-                            echo "======================================"
-                            echo "Starting EC2 Deployment"
-                            echo "======================================"
+                    echo "======================================"
+                    echo "Starting EC2 Deployment"
+                    echo "======================================"
 
-                            echo "Creating deployment directory..."
+                    echo "Checking compose file..."
 
-                            ssh -o StrictHostKeyChecking=no \
-                                ec2-user@"$DEPLOYMENT_SERVER" \
-                                "mkdir -p /home/ec2-user/shopping-cart"
+                    test -f compose.yml
 
-                            echo "Copying docker-compose.yml..."
+                    echo "Creating deployment directory..."
 
-                            scp -o StrictHostKeyChecking=no \
-                                docker-compose.yml \
-                                ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/compose.yml
+                    ssh -o StrictHostKeyChecking=no \
+                        ec2-user@"$DEPLOYMENT_SERVER" \
+                        "mkdir -p /home/ec2-user/shopping-cart"
 
-                            echo "Deploying application..."
+                    echo "Copying compose.yml..."
 
-                            ssh -o StrictHostKeyChecking=no \
-                                ec2-user@"$DEPLOYMENT_SERVER" \
-                                "cd /home/ec2-user/shopping-cart && \
-                                 docker compose pull && \
-                                 docker compose up -d && \
-                                 docker compose ps"
+                    scp -o StrictHostKeyChecking=no \
+                        compose.yml \
+                        ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/compose.yml
 
-                            echo "======================================"
-                            echo "Deployment completed successfully"
-                            echo "======================================"
-                        '''
-                    }
+                    echo "Deploying application..."
+
+                    ssh -o StrictHostKeyChecking=no \
+                        ec2-user@"$DEPLOYMENT_SERVER" \
+                        "cd /home/ec2-user/shopping-cart && \
+                         docker compose -f compose.yml pull && \
+                         docker compose -f compose.yml up -d && \
+                         docker compose -f compose.yml ps"
+
+                    echo "======================================"
+                    echo "Deployment completed successfully"
+                    echo "======================================"
+                '''
                 }
-            }
+          }
         }
     }
+}
 
     post {
 
