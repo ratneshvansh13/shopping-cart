@@ -21,7 +21,7 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                sh 'mvn clean verify '
+                sh 'mvn clean verify'
             }
         }
 
@@ -31,8 +31,8 @@ pipeline {
                     sh '''
                         mvn sonar:sonar \
                           -Dsonar.projectKey=shopping-cart \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                          -Dsonar.host.url="$SONAR_HOST_URL" \
+                          -Dsonar.login="$SONAR_AUTH_TOKEN"
                     '''
                 }
             }
@@ -41,15 +41,21 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                sh '''
+                    docker build \
+                        -t "$DOCKER_IMAGE:$DOCKER_TAG" .
+
+                    docker tag \
+                        "$DOCKER_IMAGE:$DOCKER_TAG" \
+                        "$DOCKER_IMAGE:latest"
+                '''
             }
         }
 
@@ -63,10 +69,12 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
 
-                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                        docker push ${DOCKER_IMAGE}:latest
+                        docker push "$DOCKER_IMAGE:$DOCKER_TAG"
+                        docker push "$DOCKER_IMAGE:latest"
                     '''
                 }
             }
@@ -74,25 +82,48 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
+
                 withCredentials([
                     string(
                         credentialsId: 'deployment-server',
                         variable: 'DEPLOYMENT_SERVER'
                     )
                 ]) {
+
                     sshagent(credentials: ['ec2-ssh-key']) {
 
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ec2-user@\\$DEPLOYMENT_SERVER '
-                                cd /home/ec2-user/shopping-cart
+                        sh '''
+                            set -e
 
-                                docker compose pull
+                            echo "======================================"
+                            echo "Starting EC2 Deployment"
+                            echo "======================================"
 
-                                docker compose up -d
+                            echo "Creating deployment directory..."
 
-                                docker image prune -f
-                            '
-                        """
+                            ssh -o StrictHostKeyChecking=no \
+                                ec2-user@"$DEPLOYMENT_SERVER" \
+                                "mkdir -p /home/ec2-user/shopping-cart"
+
+                            echo "Copying docker-compose.yml..."
+
+                            scp -o StrictHostKeyChecking=no \
+                                docker-compose.yml \
+                                ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/docker-compose.yml
+
+                            echo "Deploying application..."
+
+                            ssh -o StrictHostKeyChecking=no \
+                                ec2-user@"$DEPLOYMENT_SERVER" \
+                                "cd /home/ec2-user/shopping-cart && \
+                                 docker compose pull && \
+                                 docker compose up -d && \
+                                 docker compose ps"
+
+                            echo "======================================"
+                            echo "Deployment completed successfully"
+                            echo "======================================"
+                        '''
                     }
                 }
             }
@@ -100,12 +131,13 @@ pipeline {
     }
 
     post {
+
         success {
-            echo 'Build Successful'
+            echo 'Build and Deployment Successful'
         }
 
         failure {
-            echo 'Build Failed'
+            echo 'Build or Deployment Failed'
         }
 
         always {
