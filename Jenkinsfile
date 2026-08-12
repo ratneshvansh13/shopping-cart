@@ -109,7 +109,7 @@ pipeline {
 
                             scp -o StrictHostKeyChecking=no \
                                 docker-compose.yml \
-                                ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/docker-compose.yml
+                                ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/compose.yml
 
                             echo "Deploying application..."
 
