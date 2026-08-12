@@ -18,6 +18,23 @@ pipeline {
                     url: 'https://github.com/ratneshvansh13/shopping-cart.git'
             }
         }
+        stage('Check Files') {
+            steps {
+            sh '''
+            echo "Current workspace:"
+            pwd
+
+            echo "Workspace files:"
+            ls -la
+
+            echo "Searching for compose files:"
+            find . -maxdepth 3 -type f \\( \
+                -name "docker-compose.yml" -o \
+                -name "compose.yml" \
+            \\) -print
+            '''
+        }
+        }
 
         stage('Maven Build') {
             steps {
