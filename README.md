@@ -83,4 +83,4 @@ Step 2: The default Username And Password For User Is "guest@gmail.com" And "gue
 
 <bold>Thanks a lot,</bold><br/>
 Project Leader<br/>
-<b>Shashi Raj</b>
+<b>Ratnesh Vansh Saxena</b>

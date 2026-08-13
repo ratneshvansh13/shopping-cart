@@ -18,27 +18,33 @@ pipeline {
                     url: 'https://github.com/ratneshvansh13/shopping-cart.git'
             }
         }
+
         stage('Check Files') {
             steps {
-            sh '''
-            echo "Current workspace:"
-            pwd
+                sh '''
+                    echo "======================================"
+                    echo "Current workspace:"
+                    pwd
 
-            echo "Workspace files:"
-            ls -la
+                    echo "Workspace files:"
+                    ls -la
 
-            echo "Searching for compose files:"
-            find . -maxdepth 3 -type f \\( \
-                -name "docker-compose.yml" -o \
-                -name "compose.yml" \
-            \\) -print
-            '''
-        }
+                    echo "Searching for compose files:"
+                    find . -maxdepth 3 -type f \\( \
+                        -name "docker-compose.yml" -o \
+                        -name "compose.yml" \
+                    \\) -print
+                    echo "======================================"
+                '''
+            }
         }
 
         stage('Maven Build') {
             steps {
-                sh 'mvn clean verify'
+                sh '''
+                    set -e
+                    mvn clean verify
+                '''
             }
         }
 
@@ -46,10 +52,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
+                        set -e
+
                         mvn sonar:sonar \
-                          -Dsonar.projectKey=shopping-cart \
-                          -Dsonar.host.url="$SONAR_HOST_URL" \
-                          -Dsonar.login="$SONAR_AUTH_TOKEN"
+                            -Dsonar.projectKey=shopping-cart \
+                            -Dsonar.host.url="$SONAR_HOST_URL" \
+                            -Dsonar.login="$SONAR_AUTH_TOKEN"
                     '''
                 }
             }
@@ -58,7 +66,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -66,38 +74,70 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh '''
+                    set -e
+
+                    echo "Building Docker image:"
+                    echo "$DOCKER_IMAGE:$DOCKER_TAG"
+
                     docker build \
                         -t "$DOCKER_IMAGE:$DOCKER_TAG" .
 
+                    echo "Creating latest tag..."
+
                     docker tag \
                         "$DOCKER_IMAGE:$DOCKER_TAG" \
+                        "$DOCKER_IMAGE:latest"
+
+                    echo "Verifying image..."
+
+                    docker image inspect \
                         "$DOCKER_IMAGE:$DOCKER_TAG"
+
+                    echo "Docker images:"
+                    docker images "$DOCKER_IMAGE"
                 '''
             }
         }
+
         stage('Trivy Security Scan') {
             steps {
-            sh '''
-                docker run --rm \
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                -v trivy-cache:/root/.cache/ \
-                -v "$PWD:/work" \
-                aquasec/trivy:latest \
-                image \
-                --format table \
-                --output /work/trivy-report.txt \
-                ${DOCKER_IMAGE}:${DOCKER_TAG}
-            '''
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "Starting Trivy Security Scan"
+                    echo "Image: $DOCKER_IMAGE:$DOCKER_TAG"
+                    echo "======================================"
+
+                    docker run --rm \
+                        -v /var/run/docker.sock:/var/run/docker.sock \
+                        -v trivy-cache:/root/.cache/ \
+                        -v "$WORKSPACE:/work" \
+                        aquasec/trivy:latest \
+                        image \
+                        --scanners vuln \
+                        --format table \
+                        --output /work/trivy-report.txt \
+                        "$DOCKER_IMAGE:$DOCKER_TAG"
+
+                    echo "======================================"
+                    echo "Trivy Scan Completed"
+                    echo "======================================"
+
+                    cat trivy-report.txt
+                '''
+            }
+
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'trivy-report.txt',
+                        allowEmptyArchive: true
+                    )
+                }
+            }
         }
 
-        post {
-            always {
-                archiveArtifacts artifacts: 'trivy-report.txt',
-                allowEmptyArchive: true
-        }
-    }
-}
-        
         stage('Docker Login & Push') {
             steps {
                 withCredentials([
@@ -108,12 +148,21 @@ pipeline {
                     )
                 ]) {
                     sh '''
+                        set -e
+
                         echo "$DOCKER_PASS" | docker login \
                             -u "$DOCKER_USER" \
                             --password-stdin
 
-                        docker push "$DOCKER_IMAGE:$DOCKER_TAG"
-                        docker push "$DOCKER_IMAGE:latest"
+                        echo "Pushing versioned image..."
+
+                        docker push \
+                            "$DOCKER_IMAGE:$DOCKER_TAG"
+
+                        echo "Pushing latest image..."
+
+                        docker push \
+                            "$DOCKER_IMAGE:latest"
                     '''
                 }
             }
@@ -121,43 +170,85 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
+
                 withCredentials([
-                string(
-                credentialsId: 'deployment-server',
-                variable: 'DEPLOYMENT_SERVER'
-            )
-        ]) {
+                    string(
+                        credentialsId: 'deployment-server',
+                        variable: 'DEPLOYMENT_SERVER'
+                    )
+                ]) {
 
-            sshagent(credentials: ['ec2-ssh-key']) {
+                    sshagent(credentials: ['ec2-ssh-key']) {
 
-                sh '''
+                        sh '''
+                            set -e
 
-                    echo "======================================"
-                    echo "Starting EC2 Deployment"
-                    echo "======================================"
+                            echo "======================================"
+                            echo "Starting EC2 Deployment"
+                            echo "======================================"
 
-                    echo "Checking compose file..."
+                            echo "Checking compose file..."
 
-                    test -f compose.yml
+                            if [ -f compose.yml ]; then
+                                COMPOSE_FILE="compose.yml"
+                            elif [ -f docker-compose.yml ]; then
+                                COMPOSE_FILE="docker-compose.yml"
+                            else
+                                echo "ERROR: No Compose file found!"
+                                exit 1
+                            fi
 
-                    echo "Deploying application..."
+                            echo "Using compose file: $COMPOSE_FILE"
 
-                    ssh -o StrictHostKeyChecking=no \
-                        ec2-user@"$DEPLOYMENT_SERVER" \
-                        "cd /home/ec2-user/shopping-cart && \
-                         docker compose -f compose.yml pull && \
-                         docker compose -f compose.yml up -d && \
-                         docker compose -f compose.yml ps"
+                            echo "Creating deployment directory..."
 
-                    echo "======================================"
-                    echo "Deployment completed successfully"
-                    echo "======================================"
-                '''
+                            ssh -o StrictHostKeyChecking=no \
+                                ec2-user@"$DEPLOYMENT_SERVER" \
+                                "mkdir -p /home/ec2-user/shopping-cart"
+
+                            echo "Copying Compose file to EC2..."
+
+                            scp -o StrictHostKeyChecking=no \
+                                "$COMPOSE_FILE" \
+                                ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/compose.yml
+
+                            echo "Deploying application..."
+
+                            ssh -o StrictHostKeyChecking=no \
+                                ec2-user@"$DEPLOYMENT_SERVER" \
+                                "
+                                    set -e
+
+                                    cd /home/ec2-user/shopping-cart
+
+                                    echo 'Current directory:'
+                                    pwd
+
+                                    echo 'Compose file:'
+                                    ls -lh compose.yml
+
+                                    echo 'Pulling latest Docker images...'
+                                    docker compose -f compose.yml pull
+
+                                    echo 'Starting application...'
+                                    docker compose -f compose.yml up -d
+
+                                    echo 'Container status:'
+                                    docker compose -f compose.yml ps
+
+                                    echo 'Cleaning unused images...'
+                                    docker image prune -f
+                                "
+
+                            echo "======================================"
+                            echo "Deployment completed successfully"
+                            echo "======================================"
+                        '''
+                    }
                 }
-          }
+            }
         }
     }
-}
 
     post {
 
