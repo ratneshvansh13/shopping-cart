@@ -67,16 +67,15 @@ Step 2: The default Username And Password For User Is "guest@gmail.com" And "gue
 #### Some Screenshots for the project:
 
 - Home Page
-  <img src="images/webpage.jpg" width="600" alt="App Screenshot>
+  <img src="images/webpage.jpg"  alt="App Screenshot">
 - Login Page
   ![image](https://github.com/shashirajraja/shopping-cart/assets/34605595/c5451416-a669-4d76-ad84-9b8ea26bf6b4)
 - Stock Items
   ![image](https://github.com/shashirajraja/shopping-cart/assets/34605595/e94e519b-e65c-4f51-8b37-e1b555208f2d)
 - SonarQube Dashboard
- <img src="images/sonarqube-rerport.jpg" width="600" alt="SonarQube Dashboard">
+ <img src="images/sonarqube-rerport.jpg"  alt="SonarQube Dashboard">
 - CI/CD Pipeline
- <img src="images/ci-pipeline.jpg width="600" alt="CICD PIPELINE">
-
+ <img src="images/ci-pipeline.jpg" alt="CICD PIPELINE">
 - Class Diagram
   <img width="589" alt="image" src="https://github.com/shashirajraja/shopping-cart/assets/34605595/d6dbfdb9-5108-4071-b4b6-d055f0370acd">
 
