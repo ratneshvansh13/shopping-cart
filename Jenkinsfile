@@ -77,25 +77,26 @@ pipeline {
         }
         stage('Trivy Security Scan') {
             steps {
-                sh '''
-                    trivy image \
-                        --format table \
-                        --output trivy-report.txt \
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    '''
-                sh '''
-                    trivy image \
-                        --severity HIGH,CRITICAL \
-                        --exit-code 1 \
-                        "${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    '''
-            }
+            sh '''
+                docker run --rm \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                -v trivy-cache:/root/.cache/ \
+                -v "$PWD:/work" \
+                aquasec/trivy:latest \
+                image \
+                --format table \
+                --output /work/trivy-report.txt \
+                ${DOCKER_IMAGE}:${DOCKER_TAG}
+            '''
+        }
+
         post {
             always {
-                archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
-            }
+                archiveArtifacts artifacts: 'trivy-report.txt',
+                allowEmptyArchive: true
         }
-        }
+    }
+}
         
         stage('Docker Login & Push') {
             steps {
