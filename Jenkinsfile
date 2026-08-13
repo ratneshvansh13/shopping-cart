@@ -109,7 +109,6 @@ pipeline {
             sshagent(credentials: ['ec2-ssh-key']) {
 
                 sh '''
-                    set -e
 
                     echo "======================================"
                     echo "Starting EC2 Deployment"
@@ -118,18 +117,6 @@ pipeline {
                     echo "Checking compose file..."
 
                     test -f compose.yml
-
-                    echo "Creating deployment directory..."
-
-                    ssh -o StrictHostKeyChecking=no \
-                        ec2-user@"$DEPLOYMENT_SERVER" \
-                        "mkdir -p /home/ec2-user/shopping-cart"
-
-                    echo "Copying compose.yml..."
-
-                    scp -o StrictHostKeyChecking=no \
-                        compose.yml \
-                        ec2-user@"$DEPLOYMENT_SERVER":/home/ec2-user/shopping-cart/compose.yml
 
                     echo "Deploying application..."
 
