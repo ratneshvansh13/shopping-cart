@@ -14,7 +14,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'ec2-deploy',
+                git branch: 'feature',
                     url: 'https://github.com/ratneshvansh13/shopping-cart.git'
             }
         }
@@ -71,11 +71,32 @@ pipeline {
 
                     docker tag \
                         "$DOCKER_IMAGE:$DOCKER_TAG" \
-                        "$DOCKER_IMAGE:latest"
+                        "$DOCKER_IMAGE:$DOCKER_TAG"
                 '''
             }
         }
-
+        stage('Trivy Security Scan') {
+            steps {
+                sh '''
+                    trivy image \
+                        --format table \
+                        --output trivy-report.txt \
+                        ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    '''
+                sh '''
+                    trivy image \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 1 \
+                        "${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    '''
+            }
+        post {
+            always {
+                archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+            }
+        }
+        }
+        
         stage('Docker Login & Push') {
             steps {
                 withCredentials([
