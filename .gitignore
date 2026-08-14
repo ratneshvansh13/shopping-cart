@@ -4,3 +4,7 @@
 /src/application.properties
 .github/ISSUE_TEMPLATE
 .settings/
+.classpath
+.prettierrc
+.project
+WebContent/
