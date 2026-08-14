@@ -1,10 +1,17 @@
+# Build and target artifacts
 /build/
 /target/
-/databases/SHOPPING_CART_ERD.mwb.bak
-/src/application.properties
-.github/ISSUE_TEMPLATE
+
+# Database UI backups
+/**/*.bak
+
+# IDE specific settings
 .settings/
 .classpath
-.prettierrc
 .project
+
+# CRITICAL SECURITY: Block database secrets and credentials
+**/application.properties
+
+# Dynamic web build folders (Keep only if generated automatically)
 WebContent/
