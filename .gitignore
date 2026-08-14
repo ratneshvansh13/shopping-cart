@@ -6,9 +6,12 @@
 /**/*.bak
 
 # IDE specific settings
+.github/ISSUE_TEMPLATE/
 .settings/
 .classpath
 .project
+.prettierrc
+
 
 # CRITICAL SECURITY: Block database secrets and credentials
 **/application.properties
