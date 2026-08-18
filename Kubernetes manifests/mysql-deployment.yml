@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: shopping-cart
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopping-cart-mysql
+  namespace: shopping-cart
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: mysql
+    template:
+      metadata:
+        labels:
+          app: mysql
+      spec:
+        containers: 
+          - name: mysql
+            image: mysql:8.0
+            ports:
+              - containerPort: 3306
+            env:
+              - name: MYSQL_ROOT_PASSWORD  
+                valueFrom:
+                secretKeyRef:
+                  name: shopping-cart-secret
+                  key: MYSQL_ROOT_PASSWORD
+              
+              - name: MYSQL_DATABASE
+                value: "shopping-cart"
+
+              - name: MYSQL_USER
+                value: "shopuser"
+
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                secretKeyRef:
+                  name: shopping-cart-secret
+                  key: MYSQL_PASSWORD
+
+            volumeMounts:
+              - name: mysql-storage
+                mountPath: /var/lib/mysql
+
+            redinessProbe:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - mysqladmin ping -h 127.0.0.1 -u root -p"$MySQL_ROOT_PASSWORD"                         
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 10
+
+            livenessProbe:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - mysqladmin ping -h 127.0.0.1 -u root -p"$MySQL_ROOT_PASSWORD"                         
+              initialDelaySeconds: 30
+              periodSeconds: 20
+              timeoutSeconds: 5
+              failureThreshold: 5
+
+        volumes:
+          - name: mysql-storage
+            persistentVolumeClaim:
+              claimName: mysql-pvc
