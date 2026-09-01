@@ -3,4 +3,11 @@
 /databases/SHOPPING_CART_ERD.mwb.bak
 /src/application.properties
 .github/ISSUE_TEMPLATE
-.settings/
+.settings
+
+.project
+.classpath
+.prettierrc
+.env
+.dockerignore
+.github
