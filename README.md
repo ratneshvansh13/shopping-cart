@@ -1,9 +1,4 @@
-# Online Shopping Cart (E-Commerce Website)
-
-- Youtube Video for introduction, demo and setup for this Project: https://www.youtube.com/watch?v=RgQG0_orFpM
-  <!-- - YouTube video for step by step local setup of similar project: https://www.youtube.com/watch?v=mLFPodZO8Iw&t=8s -->
-  <!-- Live site url: https://ellisonelectronics.herokuapp.com -->
-  This is an E-Commerce Website build for selling of any electronics products online.
+# 🛒 Online Shopping Cart — Java DevOps Project
 
 ### About
 
@@ -16,34 +11,63 @@ Sometimes, if the user tried to add any item which is out of stock, them they wi
 
 Note: The payment page is created only for demo purpose and its not fully integrated with any payment gateway. So for now any credit card details will be accepted and the demo orders will be placed.
 
-## Highlights :--
+## 🏗️ Architecture
 
-### The users will get a mail to their registered mail Id during:-
-
-- New User Registration
-- Order Successfully Placed
-- The Item was out of stock while exploring but now it got available in the store
-- Successful shipment and delivery of the Item
-
-### Technologies used:-
-
-1. Front-End Development:
-
-- HTML
-- CSS
-- Javascript
-- BootStrap
-
-2. Back-End Development:
-
-- Java [JDK 8+]
-- JDBC
-- Servlet
-- JSP
-
-3. Database:
-
-- MySql
+```
+                    ┌──────────────────┐
+                    │     Developer    │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │     GitHub       │
+                    │ Source Control   │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │     Jenkins      │
+                    │    CI/CD Server  │
+                    └────────┬─────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+        Maven Build     SonarQube       Unit Tests
+              │          Analysis           │
+              └──────────────┬──────────────┘
+                             ▼
+                    ┌──────────────────┐
+                    │ Quality Gate     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │  Docker Build    │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ Trivy Security   │
+                    │      Scan        │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   Docker Hub     │
+                    │ Image Registry   │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    AWS EC2       │
+                    │ Docker Compose   │
+                    └────────┬─────────┘
+                             │
+                    ┌────────┴─────────┐
+                    ▼                  ▼
+             Shopping Cart          MySQL
+               Tomcat 9             8.0
+```
 
 ### ================ Software And Tools Required ================
 
@@ -55,6 +79,63 @@ Note: The payment page is created only for demo purpose and its not fully integr
 - : MySQL Server [https://www.youtube.com/watch?v=Ydh5jYA6Frs]
 - : MySQL Workbench [https://www.youtube.com/watch?v=t79oCeTXHwg]
 
+## 📂 Project Structure
+
+```
+shopping-cart/
+│
+├── .gitignore
+├── Dockerfile
+├── Jenkinsfile
+├── compose.yml
+├── pom.xml
+├── LICENSE
+├── README.md
+│
+├── databases/
+│   ├── mysql_query.sql
+│   └── SHOPPING_CART_ERD.mwb
+│
+├── src/
+│   ├── com/
+│   │   └── shashi/
+│   │       ├── beans/
+│   │       ├── constants/
+│   │       ├── service/
+│   │       ├── srv/
+│   │       └── utility/
+│   │
+│   └── test/
+│       └── java/
+│
+├── WebContent/
+│   ├── index.jsp
+│   ├── login.jsp
+│   ├── register.jsp
+│   ├── userHome.jsp
+│   ├── userProfile.jsp
+│   ├── cartDetails.jsp
+│   ├── payment.jsp
+│   ├── orderDetails.jsp
+│   ├── adminHome.jsp
+│   ├── adminStock.jsp
+│   ├── addProduct.jsp
+│   ├── updateProduct.jsp
+│   ├── removeProduct.jsp
+│   └── WEB-INF/
+│       └── web.xml
+│
+└── Kubernetes manifests/
+    ├── namespace.yml
+    ├── configmap.yml
+    ├── secret.yml
+    ├── deployment.yml
+    ├── service.yml
+    ├── ingress.yml
+    ├── mysql-deployment.yml
+    └── mysql-service.yml
+```
+
 ### =========================== CREDENTIALS ======================
 
 Step 1: Default Username And Password For Admin Is "admin@gmail.com" And "admin"
@@ -62,7 +143,6 @@ Step 1: Default Username And Password For Admin Is "admin@gmail.com" And "admin"
 Step 2: The default Username And Password For User Is "guest@gmail.com" And "guest"
 
 ## FAQ
-
 
 #### Some Screenshots for the project:
 
@@ -73,9 +153,9 @@ Step 2: The default Username And Password For User Is "guest@gmail.com" And "gue
 - Stock Items
   ![image](https://github.com/shashirajraja/shopping-cart/assets/34605595/e94e519b-e65c-4f51-8b37-e1b555208f2d)
 - SonarQube Dashboard
- <img src="images/sonarqube-rerport.jpg"  alt="SonarQube Dashboard">
+  <img src="images/sonarqube-rerport.jpg"  alt="SonarQube Dashboard">
 - CI/CD Pipeline
- <img src="images/ci-pipeline.jpg" alt="CICD PIPELINE">
+  <img src="images/ci-pipeline.jpg" alt="CICD PIPELINE">
 - Class Diagram
   <img width="589" alt="image" src="https://github.com/shashirajraja/shopping-cart/assets/34605595/d6dbfdb9-5108-4071-b4b6-d055f0370acd">
 
