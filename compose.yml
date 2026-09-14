@@ -1,21 +1,30 @@
 services:
-
   mysql:
     image: mysql:8.0
     container_name: shopping-cart-mysql
     restart: unless-stopped
 
     environment:
-      MYSQL_ROOT_PASSWORD: root@123
-      MYSQL_DATABASE: shopping-cart
-      MYSQL_USER: shopuser
-      MYSQL_PASSWORD: shoppassword
+      MYSQL_ROOT_PASSWORD: ${MY_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
     volumes:
       - mysql_data:/var/lib/mysql
 
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot@123"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-proot@123",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -32,8 +41,8 @@ services:
     environment:
       DB_DRIVER: com.mysql.cj.jdbc.Driver
       DB_CONNECTION_STRING: jdbc:mysql://mysql:3306/shopping-cart
-      DB_USERNAME: shopuser
-      DB_PASSWORD: shoppassword
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
 
     depends_on:
       mysql:

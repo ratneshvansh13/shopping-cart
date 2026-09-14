@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopping-cart-config
+  namespace: shopping-cart
+data:
+  DB_DRIVER: com.mysql.cj.jdbc.Driver
+  DB_CONNECTION_STRING: jdbc:mysql://shopping-cart-mysql:3306/shopping-cart
+  DB_USERNAME: shopuser
+  DB_PASSWORD: shoppassword
